@@ -7,44 +7,63 @@ endif()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
-find_package(roscpp REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
-find_package(gps_common REQUIRED)
+# find_package(gps_common REQUIRED)
 find_package(nav_msgs REQUIRED)
-find_package(rospy REQUIRED)
+find_package(rclpy REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(visualization_msgs REQUIRED)
 find_package(ublox_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
+find_package(tf2_eigen REQUIRED)
 find_package(Eigen3 REQUIRED)
 
-add_executable(odom_from_navrelposned src/odom_from_navrelposned.cpp)
+# find_package(Eigen3 3.1.0 REQUIRED)
+
+include_directories(
+  include
+)
+
+add_executable(odom_from_navrelposned src/main.cpp src/dgps.cpp)
+
 target_include_directories(odom_from_navrelposned PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
+
 target_compile_features(odom_from_navrelposned PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+
+target_link_libraries(odom_from_navrelposned)
+
 ament_target_dependencies(
   odom_from_navrelposned
-  "roscpp"
   "rclcpp"
   "geometry_msgs"
-  "gps_common"
   "nav_msgs"
-  "rospy"
+  "rclpy"
   "sensor_msgs"
   "std_msgs"
   "visualization_msgs"
   "ublox_msgs"
   "tf2"
   "tf2_ros"
+  "tf2_eigen"
   "Eigen3"
 )
 
 install(TARGETS odom_from_navrelposned
   DESTINATION lib/${PROJECT_NAME})
+
+install(
+  DIRECTORY launch params
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(DIRECTORY include/
+  DESTINATION include/
+)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
