@@ -21,6 +21,7 @@
 #include <fstream>
 
 #include <tf2_ros/transform_broadcaster.h>
+#include "tf2_ros/static_transform_broadcaster_node.hpp"
 #include <tf2_ros/transform_listener.h>
 #include <tf2_eigen/tf2_eigen.hpp>
 #include <tf2_ros/transform_listener.h>
@@ -55,33 +56,33 @@ namespace odom_from_navrelposned
         void readParams();
 
         // Callback for gps fix (lat and lon) and heading in moving base mode
-        void callbackDGPSRelposned(const ublox_msgs::NavRELPOSNED9::Ptr &msg);
-        void callbackDGPSFix(const sensor_msgs::NavSatFixConstPtr &fix);
-        void callbackDGPSFixRover(const sensor_msgs::NavSatFixConstPtr &fix);
+        void callbackDGPSRelposned(const ublox_msgs::msg::NavRELPOSNED9::SharedPtr &msg);
+        void callbackDGPSFix(const sensor_msgs::msg::NavSatFix::SharedPtr &fix);
+        void callbackDGPSFixRover(const sensor_msgs::msg::NavSatFix::SharedPtr &fix);
 
         // Method to compute global pose based on measurements from GPS1 and GPS2 & send it
-        void publishGlobalPose(const std_msgs::Header &header);
+        void publishGlobalPose(const std_msgs::msg::Header &header);
 
         // Methods to perform visualization in shared CS
-        void visualizeDGPS(const std_msgs::Header &header, const GPSStatus &status, const Eigen::Matrix4d &rearAxleInCharger);
+        void visualizeDGPS(const std_msgs::msg::Header &header, const GPSStatus &status, const Eigen::Matrix4d &rearAxleInCharger);
 
     private:
         // Helper to convert to metric
-        bool LLtoUTM(const sensor_msgs::NavSatFixConstPtr &fix, double &northing, double &easting, double &altitude);
+        bool LLtoUTM(const sensor_msgs::msg::NavSatFix::SharedPtr &fix, double &northing, double &easting, double &altitude);
 
         // Computes the inverse transformation
         static Eigen::Matrix4d inverse(const Eigen::Matrix4d &pose);
-
+      
 
         // ros::NodeHandle nh;
         // ros::Subscriber subDGPSFix, subDGPSFixRover, subDGPSRelPosNed, subChargerFrontPose3, subChargerFrontPose6, subChargerBackPose, subXsens;
-        rclcpp::Subscription<sensor_msgs::NavSatFixConstPtr>::SharedPtr subDGPSFix;  //subDGPSFix
-        rclcpp::Subscription<sensor_msgs::NavSatFixConstPtr>::SharedPtr subDGPSFixRover; // subDGPSFixRover
-        rclcpp::Subscription<ublox_msgs::NavRELPOSNED9>::SharedPtr subDGPSRelPosNed; // subDGPSRelPosNed
+        rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr subDGPSFix;  //subDGPSFix
+        rclcpp::Subscription<sensor_msgs::msg::NavSatFix>::SharedPtr subDGPSFixRover; // subDGPSFixRover
+        rclcpp::Subscription<ublox_msgs::msg::NavRELPOSNED9>::SharedPtr subDGPSRelPosNed; // subDGPSRelPosNed
 
-        rclcpp::Publisher<geometry_msgs::PoseWithCovarianceStamped>::SharedPtr pubPoseGPS;  //pubPoseGPS
-        rclcpp::Publisher<visualization_msgs::Marker>::SharedPtr pubVisDGPS;  //pubVisDGPS
-        rclcpp::Publisher<nav_msgs::Odometry>::SharedPtr pubBusRearAxisInMap;
+        rclcpp::Publisher<geometry_msgs::msg::PoseWithCovarianceStamped>::SharedPtr pubPoseGPS;  //pubPoseGPS
+        rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr pubVisDGPS;  //pubVisDGPS
+        rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr pubBusRearAxisInMap;
 
         // ros::Publisher pubPoseGPS, pubPoseCam, pubPoseCamInChargerCam;
         // ros::Publisher pubVisCharger, pubVisCam, pubVisDGPS;
