@@ -1,17 +1,15 @@
 #include "odom_from_navrelposned/dgps.hpp"
-
 #include "rclcpp/rclcpp.hpp"
-
 
 using namespace std;
 using std::placeholders::_1;
 namespace odom_from_navrelposned
 {
     DGPS::DGPS() : Node("odom_from_navrelposned"),
-    visGpsSeq(0), visChargerSeq(0), lastRelPosNedITow(0), lastStatusDGPS(-1), tfListener(tfBuffer)
+    visGpsSeq(0), visChargerSeq(0), lastRelPosNedITow(0), lastStatusDGPS(-1), tfBuffer(this->get_clock()), tfListener(tfBuffer)
     {
-        
-
+        readParams();
+           
         lastDGPS = Eigen::Vector3d::Zero();
         prevDGPS = Eigen::Vector3d::Zero();
         lastDGPSRover = Eigen::Vector3d::Zero();
@@ -33,8 +31,8 @@ namespace odom_from_navrelposned
         standInBackAxle.block<3, 1>(0, 3) = tStandInBackAxle.transpose();
 
         // Measured location of DGPS antenna w.r.t. the origin of suction cup
-        // Stand axes -> X-front, Y-left, Z-up
-        // GPS axes -> X-front, Y-right, Z-down
+        // Stand axes -> X-front, Y-left, Z-up      
+        // GPS axes -> X-front, Y-right, Z-down      
         gps2InStand = Eigen::Matrix4d::Identity();
         gps2InStand(1, 1) = -1;
         gps2InStand(2, 2) = -1;
@@ -55,7 +53,6 @@ namespace odom_from_navrelposned
         chargerVFOinRotCharger = Eigen::Matrix4d::Identity();
         chargerVFOinRotCharger(1, 1) = -1; // Flipping y axis
         chargerVFOinRotCharger(2, 2) = -1; // Flipping z axis
-
 
         // Starting subscription --> fix
         auto dgpsFixTopic = this->declare_parameter<std::string>("dgps_fix_topic", "/ublox_moving_base/fix");
@@ -78,7 +75,6 @@ namespace odom_from_navrelposned
         // Rear axis odometry
         pubBusRearAxisInMap = this->create_publisher<nav_msgs::msg::Odometry>("/gps_pose_estimator/rear_axis_pose", 5);
 
-
         systemInitialized = false;
         prevFrontAxleInCharger = Eigen::Matrix4d::Identity();
 
@@ -94,51 +90,75 @@ namespace odom_from_navrelposned
     void DGPS::readParams() {
 
         // Charger location in the world! GPS lat, lon, alt, heading
+        this->declare_parameter<double>("gps_parking_spot_latitude", 0.00);
         if (this->get_parameter("gps_parking_spot_latitude", gps_parking_spot_latitude))
             RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "Set gps_parking_spot_latitude: " << gps_parking_spot_latitude);
+        
+        this->declare_parameter<double>("gps_parking_spot_longitude", 0.00);
         if (this->get_parameter("gps_parking_spot_longitude", gps_parking_spot_longitude))
             RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "Set gps_parking_spot_longitude: " << gps_parking_spot_longitude);
+        
+        this->declare_parameter<double>("gps_parking_spot_altitude", 0.00);
         if (this->get_parameter("gps_parking_spot_altitude", gps_parking_spot_altitude))
             RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "Set gps_parking_spot_altitude: " << gps_parking_spot_altitude);
+        
+        this->declare_parameter<double>("gps_parking_spot_heading", 0.00);
         if (this->get_parameter("gps_parking_spot_heading", gps_parking_spot_heading))
             RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "Set gps_parking_spot_heading: " << gps_parking_spot_heading);
 
+
+        this->declare_parameter<double>("stand_in_frontAxle_x", 1.00);
         if (this->get_parameter("stand_in_frontAxle_x", tStandInFrontAxle[0]))
             RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "Set stand_in_frontAxle_x: " << tStandInFrontAxle[0]);
+
+        this->declare_parameter<double>("stand_in_frontAxle_y", 1.00);
         if (this->get_parameter("stand_in_frontAxle_y", tStandInFrontAxle[1]))
             RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "Set stand_in_frontAxle_y: " << tStandInFrontAxle[1]);
+
+        this->declare_parameter<double>("stand_in_frontAxle_z", 1.00);
         if (this->get_parameter("stand_in_frontAxle_z", tStandInFrontAxle[2]))
             RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "Set stand_in_frontAxle_z: " << tStandInFrontAxle[2]);
 
+
+
+        this->declare_parameter<double>("stand_in_backAxle_x", 1.00);
         if (this->get_parameter("stand_in_backAxle_x", tStandInBackAxle[0]))
             RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "Set stand_in_backAxle_x: " << tStandInBackAxle[0]);
+
+        this->declare_parameter<double>("stand_in_backAxle_y", 1.00);
         if (this->get_parameter("stand_in_backAxle_y", tStandInBackAxle[1]))
             RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "Set stand_in_backAxle_y: " << tStandInBackAxle[1]);
+
+        this->declare_parameter<double>("stand_in_backAxle_z", 1.00);    
         if (this->get_parameter("stand_in_backAxle_z", tStandInBackAxle[2]))
             RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "Set stand_in_backAxle_z: " << tStandInBackAxle[2]);
 
+        
+        this->declare_parameter<uint8_t>("verbose", 0);    
         if (this->get_parameter("verbose", verbose))
             RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "Set verbose: " << verbose);
     }   
 
 
-    // void DGPS::callbackDGPSRelposned(const ublox_msgs::msg::NavRELPOSNED9::SharedPtr &msg) 
-    void DGPS::callbackDGPSRelposned(const std::shared_ptr<ublox_msgs::msg::NavRELPOSNED9> &msg) 
+    
+    void DGPS::callbackDGPSRelposned(const ublox_msgs::msg::NavRELPOSNED9::SharedPtr msg)
     {
+        // RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "callbackDGPSRelposned");
         
         lastRelPosNedITow = msg->i_tow;
         // +180.0 -- navrelposned reports MB location in rover (and heading is taken from that). We need rover location in MB so inverse
         // lastHeading = msg->relPosHeading * 1e-5;
-      
+
         double relNorth = msg->rel_pos_n + msg->rel_pos_hpn / 100.0;
         double relEast = msg->rel_pos_e + msg->rel_pos_hpe / 100.0;
         if (relNorth != 0 || relEast != 0)
             lastHeading = atan2(relEast, relNorth) * 180.0 / M_PI;
     }
 
-    // void DGPS::callbackDGPSFix(const sensor_msgs::msg::NavSatFix::SharedPtr &fix) 
-    void DGPS::callbackDGPSFix(const std::shared_ptr<sensor_msgs::msg::NavSatFix> &fix) 
+   
+    void DGPS::callbackDGPSFix(const sensor_msgs::msg::NavSatFix::SharedPtr fix)
     {
+        // RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "callbackDGPSFix");
         // Save last measurement
         if (LLtoUTM(fix, lastDGPS[0], lastDGPS[1], lastDGPS[2])) {
             lastStatusDGPS = fix->status.status;
@@ -152,7 +172,9 @@ namespace odom_from_navrelposned
         };
     }
 
-    void DGPS::callbackDGPSFixRover(const sensor_msgs::msg::NavSatFix::SharedPtr &fix) {
+    void DGPS::callbackDGPSFixRover(const sensor_msgs::msg::NavSatFix::SharedPtr fix)
+    {
+        // RCLCPP_INFO_STREAM(rclcpp::get_logger("odom_from_navrelposned"), "callbackDGPSFixRover");
 
         // Save last measurement
         if (LLtoUTM(fix, lastDGPSRover[0], lastDGPSRover[1], lastDGPSRover[2])) {
@@ -334,6 +356,7 @@ namespace odom_from_navrelposned
 
     void DGPS::visualizeDGPS(const std_msgs::msg::Header &header, const GPSStatus &status, const Eigen::Matrix4d &rearAxleInCharger) 
     {
+        
 
         Eigen::Quaterniond quat(rearAxleInCharger.block<3, 3>(0, 0));
 

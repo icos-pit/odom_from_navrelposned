@@ -57,7 +57,12 @@ install(TARGETS odom_from_navrelposned
   DESTINATION lib/${PROJECT_NAME})
 
 install(
-  DIRECTORY launch params
+  DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(DIRECTORY
+  config
   DESTINATION share/${PROJECT_NAME}
 )
 

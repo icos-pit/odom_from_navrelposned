@@ -19,6 +19,7 @@
 #include <cmath>
 #include <visualization_msgs/msg/marker.hpp>
 #include <fstream>
+#include <memory>
 
 #include <tf2_ros/transform_broadcaster.h>
 #include "tf2_ros/static_transform_broadcaster_node.hpp"
@@ -56,9 +57,12 @@ namespace odom_from_navrelposned
         void readParams();
 
         // Callback for gps fix (lat and lon) and heading in moving base mode
-        void callbackDGPSRelposned(const ublox_msgs::msg::NavRELPOSNED9::SharedPtr &msg);
-        void callbackDGPSFix(const sensor_msgs::msg::NavSatFix::SharedPtr &fix);
-        void callbackDGPSFixRover(const sensor_msgs::msg::NavSatFix::SharedPtr &fix);
+        void callbackDGPSRelposned(const ublox_msgs::msg::NavRELPOSNED9::SharedPtr msg);
+        void callbackDGPSFix(const sensor_msgs::msg::NavSatFix::SharedPtr fix);
+        void callbackDGPSFixRover(const sensor_msgs::msg::NavSatFix::SharedPtr fix);
+        // void callbackDGPSRelposned(const std::shared_ptr<ublox_msgs::msg::NavRELPOSNED9> &msg);
+        // void callbackDGPSFix(const std::shared_ptr<sensor_msgs::msg::NavSatFix> &fix);
+        // void callbackDGPSFixRover(const std::shared_ptr<sensor_msgs::msg::NavSatFix> &fix);
 
         // Method to compute global pose based on measurements from GPS1 and GPS2 & send it
         void publishGlobalPose(const std_msgs::msg::Header &header);
@@ -89,6 +93,7 @@ namespace odom_from_navrelposned
 
         // Charger location in the World
         double gps_parking_spot_latitude, gps_parking_spot_longitude, gps_parking_spot_altitude, gps_parking_spot_heading;
+       
 
         // Place where out setup will be installed (Requires data from SOLARIS)
         Eigen::Vector3d tStandInFrontAxle, tStandInBackAxle;
@@ -135,6 +140,8 @@ namespace odom_from_navrelposned
 
         // File to store measurements for analysis
         std::ofstream file;
+   
+    
 
         tf2_ros::Buffer tfBuffer;
         tf2_ros::TransformListener tfListener;
