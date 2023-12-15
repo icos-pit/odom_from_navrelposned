@@ -2,8 +2,8 @@ odom_from_navrelposned:
   ros__parameters:
     gps_parking_spot_latitude: 52.370855
     gps_parking_spot_longitude: 16.937079
-    gps_parking_spot_altitude: 68.0
-    gps_parking_spot_heading: 318.0
+    gps_parking_spot_altitude: 111.0
+    gps_parking_spot_heading: 180.0
     stand_in_frontAxle_x: 0.0
     stand_in_frontAxle_y: 0.0
     stand_in_frontAxle_z: 0.0

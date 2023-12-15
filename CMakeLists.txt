@@ -19,7 +19,7 @@ find_package(ublox_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_eigen REQUIRED)
-find_package(Eigen3 REQUIRED)
+# find_package(Eigen3 REQUIRED)
 
 # find_package(Eigen3 3.1.0 REQUIRED)
 
@@ -50,7 +50,7 @@ ament_target_dependencies(
   "tf2"
   "tf2_ros"
   "tf2_eigen"
-  "Eigen3"
+  # "Eigen3"
 )
 
 install(TARGETS odom_from_navrelposned
