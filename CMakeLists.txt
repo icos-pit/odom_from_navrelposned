@@ -50,7 +50,6 @@ ament_target_dependencies(
   "tf2"
   "tf2_ros"
   "tf2_eigen"
-  # "Eigen3"
 )
 
 install(TARGETS odom_from_navrelposned
