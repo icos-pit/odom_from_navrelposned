@@ -149,10 +149,21 @@ namespace odom_from_navrelposned
         // +180.0 -- navrelposned reports MB location in rover (and heading is taken from that). We need rover location in MB so inverse
         // lastHeading = msg->relPosHeading * 1e-5;
 
-        double relNorth = msg->rel_pos_n + msg->rel_pos_hpn / 100.0;
-        double relEast = msg->rel_pos_e + msg->rel_pos_hpe / 100.0;
+        double relNorth = (msg->rel_pos_n + (msg->rel_pos_hpn*0.01)) / 100.0;
+        double relEast = (msg->rel_pos_e + (msg->rel_pos_hpe*0.01)) / 100.0;
+        // double relNorth = msg->rel_pos_n + msg->rel_pos_hpn / 100.0;
+        // double relEast = msg->rel_pos_e + msg->rel_pos_hpe / 100.0;
         if (relNorth != 0 || relEast != 0)
+        {
+            RCLCPP_INFO_STREAM(rclcpp::get_logger("your_node_name"), "NON-ZERO Ok!");
             lastHeading = atan2(relEast, relNorth) * 180.0 / M_PI;
+
+        }
+            
+        
+        RCLCPP_INFO_STREAM(rclcpp::get_logger("your_node_name"), "theta_from_ned: " << lastHeading << " deg");
+
+    
     }
 
    
@@ -246,6 +257,9 @@ namespace odom_from_navrelposned
 
         // Getting the theta angle (rotation by Z axis)
         double finalTheta = atan2(frontAxleInCharger(1, 0), frontAxleInCharger(0, 0));
+        if (finalTheta < 0) {
+            finalTheta += M_PI * 2; // Normalize to 0-360 degrees
+        }
 
         // Sending theta as quaternion
         Eigen::Quaterniond quatTheta(frontAxleInCharger.block<3, 3>(0, 0));
@@ -263,7 +277,8 @@ namespace odom_from_navrelposned
         poseOut.pose.pose.orientation.z = quatTheta.z();
         poseOut.pose.pose.orientation.w = quatTheta.w();
 
-        if (dataStatus == GPSStatus::FIXEDwithHeading) {
+        // if (dataStatus == GPSStatus::FIXEDwithHeading) {
+        if (true) {
             pubPoseGPS->publish(poseOut);
 
             auto br = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
@@ -346,8 +361,12 @@ namespace odom_from_navrelposned
 
 
         if(verbose)
+        {
             RCLCPP_INFO_STREAM(rclcpp::get_logger("your_node_name"), "DGPS XYZ: [" << frontAxleInCharger(0,3) << " " << frontAxleInCharger(1,3) << " " << frontAxleInCharger(3,3) <<
                                         "] theta: " << finalTheta * 180.0 / M_PI << " deg");
+            
+        }
+            
         // std::cout << "theta: " << theta * 180.0 / M_PI << std::endl;
 
         // Visualization
